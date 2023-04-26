@@ -1,0 +1,51 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+df = pd.read_csv('customer_data.csv')
+
+# Check for missing values
+print(df.isnull().sum())
+
+# Remove duplicates
+df.drop_duplicates(inplace=True)
+
+# Check for outliers
+sns.boxplot(df['age'])
+
+# Remove outliers
+df = df[df['age']<80]
+
+# Create a new feature
+df['total_spending'] = df['amount_spent'] * df['num_purchases']
+
+# Scale the data
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(df[['age', 'total_spending']])
+
+# Find the optimal number of clusters
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    kmeans.fit(scaled_data)
+    wcss.append(kmeans.inertia_)
+    
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+# Apply KMeans Clustering
+kmeans = KMeans(n_clusters=3, init='k-means++', max_iter=300, n_init=10, random_state=0)
+kmeans.fit(scaled_data)
+
+# Visualize the clusters
+df['cluster'] = kmeans.labels_
+sns.scatterplot(data=df, x='age', y='total_spending', hue='cluster')
+plt.show()
